@@ -99,8 +99,21 @@
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 15px;
   }
+  .app-bar-titles { flex: 1; min-width: 0; }
   .app-bar-title { font-size: 19px; font-weight: 700; letter-spacing: .01em; line-height: 1.15; }
   .app-bar-sub { font-size: 12px; color: rgba(255,255,255,.82); margin-top: 1px; }
+  .app-bar-fav-btn {
+    flex-shrink: 0; background: none; border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px;
+  }
+  .app-bar-fav-btn:hover { background: rgba(255,255,255,.15); }
+  .fav-star-btn {
+    background: none; border: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; padding: 8px; border-radius: 8px; color: rgba(255,255,255,.55);
+  }
+  .fav-star-btn.active { color: #FFD54A; }
+  .fav-star-btn.active svg { fill: currentColor; }
+  .fav-star-btn:hover { background: rgba(255,255,255,.15); }
 
   .search-wrap { padding: 12px 16px 8px; flex-shrink: 0; background: var(--paper); }
   .search-box {
@@ -129,7 +142,18 @@
   .chip.active { background: var(--green); border-color: var(--green); color: #fff; }
 
   .views { flex: 1; overflow: hidden; position: relative; min-height: 0; }
-  .view { display: none; flex-direction: column; height: 100%; min-height: 0; }
+  .view { display: none; flex-direction: column; height: 100%; min-height: 0; position: relative; }
+  .az-index {
+    position: absolute; right: 1px; top: 0; bottom: 0; z-index: 5;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 4px 3px; gap: 0;
+  }
+  .az-index button {
+    background: none; border: none; font-family: inherit; font-size: 9.5px; font-weight: 700;
+    line-height: 1.5; padding: 0 3px; color: var(--ink-faint); cursor: pointer;
+  }
+  .az-index button:disabled { color: var(--line); cursor: default; }
+  #view-streets .list-scroll, #view-transport .list-scroll { padding-right: 28px; }
   .view.active { display: flex; }
   .list-scroll { flex: 1; overflow-y: auto; padding: 4px 16px 24px; min-height: 0; }
   .empty-state { text-align: center; color: var(--ink-faint); font-size: 13.5px; padding: 40px 24px; line-height: 1.6; }
@@ -266,10 +290,13 @@
     <div class="app-bar">
       <div class="app-bar-row">
         <div class="app-bar-logo">路</div>
-        <div>
+        <div class="app-bar-titles">
           <div class="app-bar-title">路牌 Lou&nbsp;Paai</div>
-          <div class="app-bar-sub">Streets, transit &amp; sights · EN ⇄ 中文 · for taxis</div>
+          <div class="app-bar-sub">Streets, transit &amp; sights · EN ⇄ 中文</div>
         </div>
+        <button class="app-bar-fav-btn" id="openFavorites" type="button" aria-label="Favorites" title="Favorites">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z"/></svg>
+        </button>
       </div>
     </div>
 
@@ -288,6 +315,7 @@
           <div class="empty-state" id="hint-streets">Search all 4543 named streets in Hong Kong, or pick a district above.</div>
           <div class="list-panel" id="list-streets" style="display:none;"></div>
         </div>
+        <div class="az-index" id="azIndexStreets"></div>
       </div>
 
       <div class="view" id="view-transport">
@@ -296,6 +324,7 @@
           <div class="empty-state" id="hint-transport">Search MTR, Light Rail and ferry stops, or pick a mode above.</div>
           <div class="list-panel" id="list-transport" style="display:none;"></div>
         </div>
+        <div class="az-index" id="azIndexTransport"></div>
       </div>
 
       <div class="view" id="view-sightseeing">
@@ -350,6 +379,19 @@
         </div>
       </div>
 
+      <div class="view" id="view-favorites">
+        <div class="overlay-bar">
+          <button class="overlay-back" id="favoritesBack" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+        </div>
+        <div class="list-scroll">
+          <div class="empty-state" id="hint-favorites">No favorites saved yet. Tap the star on any result to save it here.</div>
+          <div class="list-panel" id="list-favorites" style="display:none;"></div>
+        </div>
+      </div>
+
       <div class="overlay" id="overlay">
         <div class="overlay-bar">
           <button class="overlay-back" id="overlayBack" type="button">
@@ -357,6 +399,9 @@
             Back
           </button>
           <div class="overlay-actions">
+            <button class="fav-star-btn" id="overlayFav" type="button" aria-label="Save as favorite" title="Save as favorite">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z"/></svg>
+            </button>
             <button class="overlay-icon-btn" id="overlayMaps" type="button" aria-label="Open in Maps" title="Open in Maps">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>
             </button>
@@ -422,25 +467,63 @@
     if (nb) tags.push({ text: nb, primary: true });
     dc.split("-").forEach(function(code) { tags.push({ text: DISTRICT_NAMES[code] || code, primary: false }); });
     var info = NOTES[normKey(en) + "|" + zh];
-    return { en: en, zh: zh, r: r, tags: tags, note: info ? info.note : null, address: null, dc: dc, nb: nb };
+    return { en: en, zh: zh, r: r, tags: tags, note: info ? info.note : null, address: null, dc: dc, nb: nb, category: "streets" };
   });
 
   var TRANSPORT = TRANSPORT_RAW.map(function(row) {
     var en = row[0], zh = row[1], r = row[2], kind = row[3];
-    return { en: en, zh: zh, r: r, tags: [{ text: kind, primary: true }], note: null, jyut: null, address: null, kind: kind };
+    return { en: en, zh: zh, r: r, tags: [{ text: kind, primary: true }], note: null, address: null, kind: kind, category: "transport" };
   });
 
   var SIGHTSEEING = SIGHTSEEING_RAW.map(function(row) {
     var en = row[0], zh = row[1], r = row[2], addr = row[3], note = row[4];
-    return { en: en, zh: zh, r: r, tags: [], note: note, jyut: null, address: addr };
+    return { en: en, zh: zh, r: r, tags: [], note: note, address: addr, category: "sightseeing" };
   });
 
   var HOTELS = HOTELS_RAW.map(function(row) {
     var en = row[0], zh = row[1], r = row[2], addr = row[3];
-    return { en: en, zh: zh, r: r, tags: [], note: null, jyut: null, address: addr };
+    return { en: en, zh: zh, r: r, tags: [], note: null, address: addr, category: "hotels" };
   });
 
+  var ALL_ITEMS = STREETS.concat(TRANSPORT, SIGHTSEEING, HOTELS);
+  function favId(item) { return item.category + "|" + normKey(item.en) + "|" + item.zh; }
+
   var ROW_ARROW_SVG = '<svg class="row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>';
+
+  var azIndexStreets = document.getElementById("azIndexStreets");
+  var azIndexTransport = document.getElementById("azIndexTransport");
+
+  function bucketFor(en) {
+    var c = en.charAt(0).toUpperCase();
+    return c >= "A" && c <= "Z" ? c : "#";
+  }
+  function clearAZIndex(el) {
+    el.innerHTML = "";
+  }
+  function buildAZIndex(el, listPanelEl, sortedItems) {
+    el.innerHTML = "";
+    var firstIndexForLetter = {};
+    sortedItems.forEach(function(item, idx) {
+      var b = bucketFor(item.en);
+      if (!(b in firstIndexForLetter)) firstIndexForLetter[b] = idx;
+    });
+    var letters = ["#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+    letters.forEach(function(letter) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = letter;
+      var idx = firstIndexForLetter[letter];
+      if (idx === undefined) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener("click", function() {
+          var rowEl = listPanelEl.children[idx];
+          if (rowEl) rowEl.scrollIntoView({ block: "start" });
+        });
+      }
+      el.appendChild(btn);
+    });
+  }
 
   function renderRows(container, items) {
     container.innerHTML = "";
@@ -530,6 +613,7 @@
       bigAddress.style.display = "none";
     }
     currentItem = item;
+    overlayFavBtn.classList.toggle("active", isFavorite(item));
     overlay.classList.add("open");
   }
   document.getElementById("overlayBack").addEventListener("click", function() {
@@ -537,6 +621,75 @@
   });
 
   var currentItem = null;
+
+  var FAV_KEY = "loupaai_favorites";
+  function loadFavIds() {
+    try {
+      var raw = localStorage.getItem(FAV_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveFavIds(ids) {
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(ids)); } catch (e) {}
+  }
+  function isFavorite(item) {
+    return loadFavIds().indexOf(favId(item)) !== -1;
+  }
+  function toggleFavorite(item) {
+    var id = favId(item);
+    var ids = loadFavIds();
+    var idx = ids.indexOf(id);
+    if (idx === -1) ids.push(id);
+    else ids.splice(idx, 1);
+    saveFavIds(ids);
+    return idx === -1;
+  }
+
+  var overlayFavBtn = document.getElementById("overlayFav");
+  overlayFavBtn.addEventListener("click", function() {
+    if (!currentItem) return;
+    var nowFav = toggleFavorite(currentItem);
+    overlayFavBtn.classList.toggle("active", nowFav);
+  });
+
+  var viewFavorites = document.getElementById("view-favorites");
+  var hintFavorites = document.getElementById("hint-favorites");
+  var listFavorites = document.getElementById("list-favorites");
+  var previousView = null;
+
+  function renderFavorites() {
+    var ids = loadFavIds();
+    var idSet = {};
+    ids.forEach(function(id) { idSet[id] = true; });
+    var items = ALL_ITEMS.filter(function(it) { return idSet[favId(it)]; });
+    if (!items.length) {
+      hintFavorites.style.display = "block";
+      listFavorites.style.display = "none";
+      listFavorites.innerHTML = "";
+      return;
+    }
+    hintFavorites.style.display = "none";
+    listFavorites.style.display = "block";
+    renderRows(listFavorites, items);
+  }
+
+  document.getElementById("openFavorites").addEventListener("click", function() {
+    previousView = currentView;
+    overlay.classList.remove("open");
+    navBtns.forEach(function(b) { b.classList.remove("active"); });
+    Object.keys(views).forEach(function(k) { views[k].classList.remove("active"); });
+    viewFavorites.classList.add("active");
+    searchWrap.style.display = "none";
+    renderFavorites();
+  });
+  document.getElementById("favoritesBack").addEventListener("click", function() {
+    viewFavorites.classList.remove("active");
+    var target = previousView || "streets";
+    var btn = document.querySelector('.nav-btn[data-view="' + target + '"]');
+    if (btn) btn.click();
+  });
 
   function mapsQuery(item) {
     if (item.address) return item.en + ", " + item.address;
@@ -623,7 +776,7 @@
       if (currentDistrict && s.dc.split("-").indexOf(currentDistrict) === -1) return false;
       return textMatch(s, q, qLower);
     });
-    var cap = currentDistrict ? 150 : 60;
+    var cap = currentDistrict ? Infinity : 60;
     if (!currentDistrict) sortByStart(results, qLower);
     else results.sort(function(a, b) { return a.en.localeCompare(b.en); });
     var total = results.length;
@@ -631,13 +784,17 @@
       hint.style.display = "block";
       hint.textContent = "No streets match that search.";
       panel.style.display = "none"; panel.innerHTML = ""; resultCount.textContent = "";
+      clearAZIndex(azIndexStreets);
       return;
     }
     hint.style.display = "none";
     panel.style.display = "block";
-    renderRows(panel, results.slice(0, cap));
+    var shown = results.slice(0, cap);
+    renderRows(panel, shown);
     var label = currentDistrict ? DISTRICT_NAMES[currentDistrict] + ": " : "";
     resultCount.textContent = label + total + " match" + (total === 1 ? "" : "es") + (total > cap ? (" — showing first " + cap + ", keep typing to narrow") : "");
+    if (currentDistrict) buildAZIndex(azIndexStreets, panel, shown);
+    else clearAZIndex(azIndexStreets);
   }
 
   function doTransport() {
@@ -655,11 +812,13 @@
       hint.style.display = "block";
       hint.textContent = "No stations or stops match that search.";
       panel.style.display = "none"; panel.innerHTML = ""; resultCount.textContent = "";
+      clearAZIndex(azIndexTransport);
       return;
     }
     hint.style.display = "none";
     panel.style.display = "block";
     renderRows(panel, results);
+    buildAZIndex(azIndexTransport, panel, results);
     resultCount.textContent = total + " result" + (total === 1 ? "" : "s");
   }
 
