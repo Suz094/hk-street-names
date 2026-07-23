@@ -1,4 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>路牌 · HK Street Names</title>
+<meta name="description" content="Search and browse Hong Kong street names in English and Chinese, with a plain-letter reading for each.">
+<meta name="theme-color" content="#00693E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
   :root {
     --green: #00693E;
@@ -224,6 +234,8 @@
   .tile-sample .en { font-weight: 700; letter-spacing: .03em; color: #2B2B26; font-size: 12px; text-transform: uppercase; }
   .tile-sample .zh { color: var(--red); font-size: 15px; margin-top: 2px; }
 </style>
+</head>
+<body>
 
 <div class="frame-backdrop">
   <div class="app-shell" id="appShell">
@@ -536,4 +548,12 @@
   });
 
   refresh();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("sw.js").catch(function() {});
+    });
+  }
 </script>
+</body>
+</html>
