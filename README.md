@@ -6,7 +6,7 @@ A mobile-first web app for looking up Hong Kong streets, transit stops, attracti
 - **Transport** — 172 MTR stations, Light Rail stops, and major ferry piers
 - **Sightseeing** — 11 major tourist attractions
 - **Hotels** — 1,815 licensed hotels and guesthouses
-- Every entry shows a plain-letter reading (tone-free) of the Chinese name; ~56 well-known streets get a hand-checked, tone-marked Jyutping reading and a short history note instead
+- Every street shows a tone-marked Jyutping reading, built character-by-character from Unicode's public Cantonese pronunciation data; Transport/Sightseeing/Hotels show the same reading with the tone dropped. ~55 well-known streets additionally get a short history note, matched by name *and* Chinese characters together so streets that share an English name (e.g. two unrelated "Tai Yuen Street"s) never inherit the wrong note
 - Tap any result to open a large bilingual card designed to be held up and read by a driver
 - Installable as a PWA (manifest + service worker); "Add to Home Screen" gives a full-screen app-like experience on Android and iOS
 
