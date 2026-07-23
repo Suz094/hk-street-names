@@ -173,12 +173,22 @@
   }
   .overlay.open { transform: translateX(0); }
   .overlay-bar {
-    display: flex; align-items: center; gap: 4px; padding: 14px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 14px 12px;
     background: var(--green); color: #fff; flex-shrink: 0; box-shadow: var(--shadow);
   }
   .overlay-back {
     background: none; border: none; color: #fff; display: flex; align-items: center;
     cursor: pointer; font: inherit; font-size: 15px; font-weight: 500; padding: 6px 8px; gap: 4px;
+  }
+  .overlay-actions { display: flex; gap: 2px; }
+  .overlay-icon-btn {
+    background: none; border: none; color: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 8px; border-radius: 8px;
+  }
+  .overlay-icon-btn:hover { background: rgba(255,255,255,.15); }
+  .share-toast {
+    font-size: 12px; color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent);
+    padding: 5px 12px; border-radius: 999px; font-weight: 600;
   }
   .overlay-content {
     flex: 1; overflow-y: auto; padding: 28px 20px 20px; display: flex;
@@ -346,6 +356,14 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
+          <div class="overlay-actions">
+            <button class="overlay-icon-btn" id="overlayMaps" type="button" aria-label="Open in Maps" title="Open in Maps">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>
+            </button>
+            <button class="overlay-icon-btn" id="overlayShare" type="button" aria-label="Share" title="Share">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.7l7.6-4.4M8.2 13.3l7.6 4.4"/></svg>
+            </button>
+          </div>
         </div>
         <div class="overlay-content">
           <div class="big-sign">
@@ -356,6 +374,7 @@
           <div class="big-jyut mono" id="bigJyut" style="display:none;"></div>
           <p class="big-note" id="bigNote" style="display:none;"></p>
           <p class="big-address" id="bigAddress" style="display:none;"></p>
+          <div class="share-toast" id="shareToast" style="display:none;">Copied to clipboard</div>
           <div class="hold-hint">Hold this up to show your driver</div>
         </div>
       </div>
@@ -510,10 +529,57 @@
     } else {
       bigAddress.style.display = "none";
     }
+    currentItem = item;
     overlay.classList.add("open");
   }
   document.getElementById("overlayBack").addEventListener("click", function() {
     overlay.classList.remove("open");
+  });
+
+  var currentItem = null;
+
+  function mapsQuery(item) {
+    if (item.address) return item.en + ", " + item.address;
+    var place = item.tags.length ? item.tags[0].text : "";
+    return place ? (item.en + ", " + place + ", Hong Kong") : (item.en + ", Hong Kong");
+  }
+  function shareText(item) {
+    var parts = [item.en];
+    if (item.zh) parts.push(item.zh);
+    if (item.address) parts.push(item.address);
+    return parts.join(" — ");
+  }
+
+  document.getElementById("overlayMaps").addEventListener("click", function() {
+    if (!currentItem) return;
+    var url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapsQuery(currentItem));
+    window.open(url, "_blank", "noopener");
+  });
+
+  var shareToast = document.getElementById("shareToast");
+  var shareToastTimer = null;
+  function flashToast(msg) {
+    shareToast.textContent = msg;
+    shareToast.style.display = "inline-block";
+    clearTimeout(shareToastTimer);
+    shareToastTimer = setTimeout(function() { shareToast.style.display = "none"; }, 2200);
+  }
+  document.getElementById("overlayShare").addEventListener("click", function() {
+    if (!currentItem) return;
+    var text = shareText(currentItem);
+    if (navigator.share) {
+      navigator.share({ title: currentItem.en, text: text }).catch(function() {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        flashToast("Copied to clipboard");
+      }).catch(function() {
+        flashToast("Couldn't copy — try manually");
+      });
+    } else {
+      flashToast("Sharing not supported on this browser");
+    }
   });
 
   function textMatch(item, q, qLower) {
