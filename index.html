@@ -127,6 +127,12 @@
     font-size: 15px; color: var(--ink); width: 100%; font-family: inherit;
   }
   .search-box input::placeholder { color: var(--ink-faint); }
+  .search-clear-btn {
+    flex-shrink: 0; background: none; border: none; color: var(--ink-faint);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    padding: 2px; border-radius: 50%;
+  }
+  .search-clear-btn:hover { color: var(--ink-soft); }
   .result-count { font-size: 12px; color: var(--ink-faint); padding: 6px 4px 0; min-height: 16px; }
 
   .chip-row {
@@ -328,6 +334,9 @@
       <div class="search-box">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="searchInput" type="text" placeholder="Search English or 中文 name…" autocomplete="off" />
+        <button class="search-clear-btn" id="searchClear" type="button" aria-label="Clear search" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <div class="result-count" id="resultCount"></div>
     </div>
@@ -957,13 +966,20 @@
     resultCount.textContent = total + " match" + (total === 1 ? "" : "es") + (total > cap ? (" — showing top " + cap + ", keep typing to narrow") : "");
   }
 
+  var searchClear = document.getElementById("searchClear");
   function refresh() {
+    searchClear.style.display = searchInput.value ? "flex" : "none";
     if (currentView === "streets") doStreets();
     else if (currentView === "transport") doTransport();
     else if (currentView === "sightseeing") doSightseeing();
     else if (currentView === "hotels") doHotels();
   }
   searchInput.addEventListener("input", refresh);
+  searchClear.addEventListener("click", function() {
+    searchInput.value = "";
+    searchInput.focus();
+    refresh();
+  });
 
   var chipRowStreets = document.getElementById("chipRowStreets");
   chipRowStreets.innerHTML = DISTRICT_ORDER.map(function(code) {
