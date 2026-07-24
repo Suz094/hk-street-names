@@ -259,6 +259,19 @@
   .big-note { font-size: 14px; line-height: 1.6; color: var(--ink-soft); max-width: 320px; }
   .big-address { font-size: 13px; line-height: 1.5; color: var(--ink-faint); max-width: 320px; }
   .hold-hint { font-size: 12px; color: var(--ink-faint); margin-top: auto; padding-top: 14px; }
+  .show-taxi-card-btn {
+    margin-top: auto; width: 100%; max-width: 320px; background: var(--green); color: #fff;
+    border: none; border-radius: 12px; padding: 14px; font-family: inherit; font-size: 15px;
+    font-weight: 700; letter-spacing: .01em; cursor: pointer;
+  }
+  .taxi-card-overlay { z-index: 40; }
+  .taxi-card-content {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; padding: 24px;
+  }
+  .taxi-sign { max-width: 380px; padding: 32px 20px 38px; }
+  .taxi-sign .big-sign-en { font-size: 26px; }
+  .taxi-sign .big-sign-zh { font-size: 58px; margin-top: 20px; }
 
   @media (prefers-reduced-motion: reduce) { .overlay { transition: none; } }
 
@@ -266,6 +279,7 @@
   .about-block { margin-bottom: 22px; }
   .about-block h2 { font-size: 15px; margin: 0 0 8px; color: var(--green); font-weight: 700; }
   .about-block p { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 8px; }
+  .feedback-link { color: var(--green); font-weight: 600; }
   .tone-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .tone-table th {
     text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
@@ -386,6 +400,10 @@
             <h2>Data &amp; credits</h2>
             <p>Street names: Hong Kong government public street name register. Neighbourhood names: © OpenStreetMap contributors (ODbL). Character readings: Unicode Unihan Database. Transport: MTR Open Data and government transport datasets. Attractions: Culture, Sports and Tourism Bureau. Hotels: Home Affairs Department licensed hotels &amp; guesthouses register.</p>
           </div>
+          <div class="about-block">
+            <h2>Feedback</h2>
+            <p>Spotted a wrong reading, a missing street, or something that just doesn't work? <a class="feedback-link" href="https://github.com/Suz094/hk-street-names/issues/new" target="_blank" rel="noopener">Open an issue on GitHub</a>.</p>
+          </div>
         </div>
       </div>
 
@@ -434,6 +452,22 @@
           <p class="big-note" id="bigNote" style="display:none;"></p>
           <p class="big-address" id="bigAddress" style="display:none;"></p>
           <div class="share-toast" id="shareToast" style="display:none;">Copied to clipboard</div>
+          <button class="show-taxi-card-btn" id="showTaxiCard" type="button">Show taxi card</button>
+        </div>
+      </div>
+
+      <div class="overlay taxi-card-overlay" id="taxiCardOverlay">
+        <div class="overlay-bar">
+          <button class="overlay-back" id="taxiCardBack" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+        </div>
+        <div class="taxi-card-content">
+          <div class="big-sign taxi-sign">
+            <div class="big-sign-en" id="taxiEn"></div>
+            <div class="big-sign-zh cjk" id="taxiZh"></div>
+          </div>
           <div class="hold-hint">Hold this up to show your driver</div>
         </div>
       </div>
@@ -655,6 +689,21 @@
   }
   document.getElementById("overlayBack").addEventListener("click", function() {
     overlay.classList.remove("open");
+    taxiCardOverlay.classList.remove("open");
+  });
+
+  var taxiCardOverlay = document.getElementById("taxiCardOverlay");
+  var taxiEn = document.getElementById("taxiEn");
+  var taxiZh = document.getElementById("taxiZh");
+  document.getElementById("showTaxiCard").addEventListener("click", function() {
+    if (!currentItem) return;
+    taxiEn.textContent = bigEn.textContent;
+    taxiZh.textContent = bigZh.textContent;
+    taxiZh.style.display = bigZh.style.display;
+    taxiCardOverlay.classList.add("open");
+  });
+  document.getElementById("taxiCardBack").addEventListener("click", function() {
+    taxiCardOverlay.classList.remove("open");
   });
 
   var currentItem = null;
