@@ -260,7 +260,14 @@
     font-family: inherit; font-size: 15px; text-align: center; border-radius: 8px;
     padding: 6px 10px; width: 100px;
   }
+  .jyut-row { display: flex; align-items: center; gap: 6px; }
   .big-jyut { font-size: 16px; color: var(--ink-soft); }
+  .speak-btn {
+    background: none; border: none; color: var(--green); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%;
+  }
+  .speak-btn:hover { background: color-mix(in srgb, var(--green) 14%, transparent); }
+  .speak-btn.speaking { color: var(--red); }
   .big-jyut sup { color: var(--green); font-size: 10px; font-weight: 700; margin-left: .5px; }
   .big-note { font-size: 14px; line-height: 1.6; color: var(--ink-soft); max-width: 320px; }
   .big-address { font-size: 13px; line-height: 1.5; color: var(--ink-faint); max-width: 320px; }
@@ -386,6 +393,7 @@
             <h2>How the readings work</h2>
             <p>Every reading is built the same way: look up the standard Cantonese pronunciation of each Chinese character individually, using Unicode's public character database. For streets, the tone is kept (marked 1–6, see the table below); for Transport, Sightseeing, and Hotels, the tone is dropped for a simpler plain-letter reading.</p>
             <p>Either way, it's a character-by-character reading, not a verified phrase-level pronunciation — it's enough to sound a name out loud, but won't always match how it's said in fluent, connected speech. A smaller set of well-known streets additionally get a hand-checked line of history.</p>
+            <p>The speaker icon next to a reading plays the Chinese name aloud using your device's own text-to-speech voice. Quality and availability depend on what Cantonese voice (if any) is installed on your phone — some devices will fall back to Mandarin or another Chinese voice instead.</p>
             <table class="tone-table">
               <tr><th>No.</th><th>Pitch</th><th>Example</th></tr>
               <tr><td><span class="tone-num">1</span></td><td>high level</td><td class="mono cjk">si1 詩</td></tr>
@@ -457,7 +465,12 @@
             <input class="number-input" id="numberInput" type="text" inputmode="numeric" placeholder="e.g. 20" style="display:none;" />
           </div>
           <div class="big-meta" id="bigMeta"></div>
-          <div class="big-jyut mono" id="bigJyut" style="display:none;"></div>
+          <div class="jyut-row" id="jyutRow" style="display:none;">
+            <div class="big-jyut mono" id="bigJyut"></div>
+            <button class="speak-btn" id="speakBtn" type="button" aria-label="Play pronunciation" title="Play pronunciation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9v6h4l5 5V4l-5 5H5z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8 8 0 0 1 0 12"/></svg>
+            </button>
+          </div>
           <p class="big-note" id="bigNote" style="display:none;"></p>
           <p class="big-address" id="bigAddress" style="display:none;"></p>
           <div class="share-toast" id="shareToast" style="display:none;">Copied to clipboard</div>
@@ -637,6 +650,29 @@
   var bigZh = document.getElementById("bigZh");
   var bigMeta = document.getElementById("bigMeta");
   var bigJyut = document.getElementById("bigJyut");
+  var jyutRow = document.getElementById("jyutRow");
+  var speakBtn = document.getElementById("speakBtn");
+
+  if (!("speechSynthesis" in window)) {
+    speakBtn.style.display = "none";
+  } else {
+    speakBtn.addEventListener("click", function() {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        speakBtn.classList.remove("speaking");
+        return;
+      }
+      var text = bigZh.textContent;
+      if (!text) return;
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "zh-HK";
+      utter.rate = 0.85;
+      utter.onend = function() { speakBtn.classList.remove("speaking"); };
+      utter.onerror = function() { speakBtn.classList.remove("speaking"); };
+      speakBtn.classList.add("speaking");
+      speechSynthesis.speak(utter);
+    });
+  }
   var bigNote = document.getElementById("bigNote");
   var bigAddress = document.getElementById("bigAddress");
   var numberRow = document.getElementById("numberRow");
@@ -676,10 +712,12 @@
     });
     if (item.r) {
       formatJyutNodes(bigJyut, item.r);
-      bigJyut.style.display = "block";
+      jyutRow.style.display = "flex";
     } else {
-      bigJyut.style.display = "none";
+      jyutRow.style.display = "none";
     }
+    speechSynthesis.cancel();
+    speakBtn.classList.remove("speaking");
     if (item.note) {
       bigNote.textContent = item.note;
       bigNote.style.display = "block";
