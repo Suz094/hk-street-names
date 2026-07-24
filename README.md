@@ -2,12 +2,14 @@
 
 A mobile-first web app for looking up Hong Kong streets, transit stops, attractions, and hotels in English and Chinese — built for showing to taxi drivers.
 
-- **Streets** — all 4,543 officially named streets across Hong Kong's 18 districts, most with a neighbourhood name (e.g. Mid-Levels, Causeway Bay) assigned by nearest-match against OpenStreetMap place data
+- **Streets** — all 4,543 officially named streets across Hong Kong's 18 districts, most with a neighbourhood name (e.g. Mid-Levels, Causeway Bay) assigned by nearest-match against OpenStreetMap place data. Streets that genuinely cross more than one named area (e.g. Nathan Road spanning Tsim Sha Tsui, Yau Ma Tei, and Mong Kok) show as separate rows, one per area
 - **Transport** — 172 MTR stations, Light Rail stops, and major ferry piers
 - **Sightseeing** — 11 major tourist attractions
 - **Hotels** — 1,815 licensed hotels and guesthouses
 - Every street shows a tone-marked Jyutping reading, built character-by-character from Unicode's public Cantonese pronunciation data; Transport/Sightseeing/Hotels show the same reading with the tone dropped. ~55 well-known streets additionally get a short history note, matched by name *and* Chinese characters together so streets that share an English name (e.g. two unrelated "Tai Yuen Street"s) never inherit the wrong note
-- Tap any result to open a large bilingual card designed to be held up and read by a driver
+- Tap any result to open a Detail view with the reading, history, and address, plus actions: save as favorite, open in Maps, share, and (for streets) add a specific street number
+- From Detail, "Show taxi card" opens a separate, stripped-down full-screen view — just the giant bilingual sign, meant to be held up and read by a driver
+- Favorites are saved locally (no account, no server) and viewable from the star icon in the app bar
 - Installable as a PWA (manifest + service worker); "Add to Home Screen" gives a full-screen app-like experience on Android and iOS
 
 ## Data sources
