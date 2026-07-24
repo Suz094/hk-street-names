@@ -244,6 +244,16 @@
     color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent);
     padding: 3px 9px; border-radius: 999px;
   }
+  .number-row { display: flex; align-items: center; justify-content: center; }
+  .number-add-link {
+    background: none; border: none; color: var(--green); font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 8px;
+  }
+  .number-input {
+    border: 1px solid var(--line); background: var(--paper-raised); color: var(--ink);
+    font-family: inherit; font-size: 15px; text-align: center; border-radius: 8px;
+    padding: 6px 10px; width: 100px;
+  }
   .big-jyut { font-size: 16px; color: var(--ink-soft); }
   .big-jyut sup { color: var(--green); font-size: 10px; font-weight: 700; margin-left: .5px; }
   .big-note { font-size: 14px; line-height: 1.6; color: var(--ink-soft); max-width: 320px; }
@@ -415,6 +425,10 @@
             <div class="big-sign-en" id="bigEn"></div>
             <div class="big-sign-zh cjk" id="bigZh"></div>
           </div>
+          <div class="number-row" id="numberRow" style="display:none;">
+            <button class="number-add-link" id="numberAddLink" type="button">+ Add street number</button>
+            <input class="number-input" id="numberInput" type="text" inputmode="numeric" placeholder="e.g. 20" style="display:none;" />
+          </div>
           <div class="big-meta" id="bigMeta"></div>
           <div class="big-jyut mono" id="bigJyut" style="display:none;"></div>
           <p class="big-note" id="bigNote" style="display:none;"></p>
@@ -582,11 +596,34 @@
   var bigJyut = document.getElementById("bigJyut");
   var bigNote = document.getElementById("bigNote");
   var bigAddress = document.getElementById("bigAddress");
+  var numberRow = document.getElementById("numberRow");
+  var numberAddLink = document.getElementById("numberAddLink");
+  var numberInput = document.getElementById("numberInput");
+
+  numberAddLink.addEventListener("click", function() {
+    numberAddLink.style.display = "none";
+    numberInput.style.display = "inline-block";
+    numberInput.focus();
+  });
+  numberInput.addEventListener("input", function() {
+    if (!currentItem) return;
+    var num = numberInput.value.trim();
+    bigEn.textContent = num ? (num + " " + currentItem.en) : currentItem.en;
+    bigZh.textContent = num ? (currentItem.zh + num + "號") : currentItem.zh;
+  });
+
+  function streetNumber() {
+    return numberInput.value.trim();
+  }
 
   function openOverlay(item) {
     bigEn.textContent = item.en;
     bigZh.textContent = item.zh;
     bigZh.style.display = item.zh ? "block" : "none";
+    numberInput.value = "";
+    numberInput.style.display = "none";
+    numberAddLink.style.display = "inline-block";
+    numberRow.style.display = item.category === "streets" ? "flex" : "none";
     bigMeta.innerHTML = "";
     item.tags.forEach(function(tag) {
       var el = document.createElement("span");
@@ -692,13 +729,16 @@
   });
 
   function mapsQuery(item) {
-    if (item.address) return item.en + ", " + item.address;
+    var num = item.category === "streets" ? streetNumber() : "";
+    var name = num ? (num + " " + item.en) : item.en;
+    if (item.address) return name + ", " + item.address;
     var place = item.tags.length ? item.tags[0].text : "";
-    return place ? (item.en + ", " + place + ", Hong Kong") : (item.en + ", Hong Kong");
+    return place ? (name + ", " + place + ", Hong Kong") : (name + ", Hong Kong");
   }
   function shareText(item) {
-    var parts = [item.en];
-    if (item.zh) parts.push(item.zh);
+    var num = item.category === "streets" ? streetNumber() : "";
+    var parts = [num ? (num + " " + item.en) : item.en];
+    if (item.zh) parts.push(num ? (item.zh + num + "號") : item.zh);
     if (item.address) parts.push(item.address);
     return parts.join(" — ");
   }
