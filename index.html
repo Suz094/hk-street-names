@@ -340,7 +340,7 @@
     <div class="search-wrap" id="searchWrap">
       <div class="search-box">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="searchInput" type="text" placeholder="Search English or 中文 name…" autocomplete="off" />
+        <input id="searchInput" type="text" placeholder="Search streets, transport, sights & hotels…" autocomplete="off" />
         <button class="search-clear-btn" id="searchClear" type="button" aria-label="Clear search" style="display:none;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -595,7 +595,15 @@
     });
   }
 
-  function renderRows(container, items) {
+  function categoryLabel(item) {
+    if (item.category === "streets") return "Street";
+    if (item.category === "transport") return item.kind;
+    if (item.category === "sightseeing") return "Sight";
+    if (item.category === "hotels") return "Hotel";
+    return "";
+  }
+
+  function renderRows(container, items, showCategory) {
     container.innerHTML = "";
     var frag = document.createDocumentFragment();
     items.forEach(function(item) {
@@ -614,7 +622,11 @@
         zh.textContent = item.zh;
         main.appendChild(zh);
       }
-      var readingText = item.nb ? (item.r + " · " + item.nb) : (item.kind ? (item.r + " · " + item.kind) : item.r);
+      var readingBits = [item.r];
+      if (item.nb) readingBits.push(item.nb);
+      if (showCategory) readingBits.push(categoryLabel(item));
+      else if (item.kind) readingBits.push(item.kind);
+      var readingText = readingBits.filter(Boolean).join(" · ");
       if (readingText) {
         var reading = document.createElement("span");
         reading.className = "row-reading";
@@ -891,17 +903,41 @@
   var currentKind = null;
 
   var PLACEHOLDERS = {
-    streets: "Search English or 中文 name…",
-    transport: "Search stations and stops…",
-    sightseeing: "Search attractions…",
-    hotels: "Search hotels and guesthouses…"
+    streets: "Search streets, transport, sights & hotels…",
+    transport: "Search streets, transport, sights & hotels…",
+    sightseeing: "Search streets, transport, sights & hotels…",
+    hotels: "Search streets, transport, sights & hotels…"
   };
+
+  function doUnifiedSearch(hint, panel, azIndexEl) {
+    if (azIndexEl) clearAZIndex(azIndexEl);
+    var q = searchInput.value.trim();
+    var qLower = q.toLowerCase();
+    var results = ALL_ITEMS.filter(function(it) { return textMatch(it, q, qLower); });
+    sortByStart(results, qLower);
+    var total = results.length;
+    if (total === 0) {
+      hint.style.display = "block";
+      hint.textContent = "No streets, transport, sights, or hotels match “" + q + "”.";
+      panel.style.display = "none"; panel.innerHTML = ""; resultCount.textContent = "";
+      return;
+    }
+    var cap = 60;
+    hint.style.display = "none";
+    panel.style.display = "block";
+    renderRows(panel, results.slice(0, cap), true);
+    resultCount.textContent = total + " match" + (total === 1 ? "" : "es") + " across all categories" + (total > cap ? (" — showing top " + cap + ", keep typing to narrow") : "");
+  }
 
   function doStreets() {
     var hint = document.getElementById("hint-streets");
     var panel = document.getElementById("list-streets");
     var q = searchInput.value.trim();
     var qLower = q.toLowerCase();
+    if (q && !currentDistrict) {
+      doUnifiedSearch(hint, panel, azIndexStreets);
+      return;
+    }
     if (!q && !currentDistrict) {
       hint.style.display = "block";
       hint.textContent = "Search all 4543 named streets in Hong Kong, or pick a district above.";
@@ -938,6 +974,10 @@
     var panel = document.getElementById("list-transport");
     var q = searchInput.value.trim();
     var qLower = q.toLowerCase();
+    if (q && !currentKind) {
+      doUnifiedSearch(hint, panel, azIndexTransport);
+      return;
+    }
     var results = TRANSPORT.filter(function(s) {
       if (currentKind && s.kind !== currentKind) return false;
       return textMatch(s, q, qLower);
@@ -963,6 +1003,10 @@
     var panel = document.getElementById("list-sightseeing");
     var q = searchInput.value.trim();
     var qLower = q.toLowerCase();
+    if (q) {
+      doUnifiedSearch(hint, panel, null);
+      return;
+    }
     var results = SIGHTSEEING.filter(function(s) { return textMatch(s, q, qLower); });
     results.sort(function(a, b) { return a.en.localeCompare(b.en); });
     var total = results.length;
@@ -988,20 +1032,7 @@
       panel.style.display = "none"; panel.innerHTML = ""; resultCount.textContent = "";
       return;
     }
-    var results = HOTELS.filter(function(s) { return textMatch(s, q, qLower); });
-    sortByStart(results, qLower);
-    var total = results.length;
-    if (total === 0) {
-      hint.style.display = "block";
-      hint.textContent = "No hotels or guesthouses match that search.";
-      panel.style.display = "none"; panel.innerHTML = ""; resultCount.textContent = "";
-      return;
-    }
-    var cap = 60;
-    hint.style.display = "none";
-    panel.style.display = "block";
-    renderRows(panel, results.slice(0, cap));
-    resultCount.textContent = total + " match" + (total === 1 ? "" : "es") + (total > cap ? (" — showing top " + cap + ", keep typing to narrow") : "");
+    doUnifiedSearch(hint, panel, null);
   }
 
   var searchClear = document.getElementById("searchClear");
